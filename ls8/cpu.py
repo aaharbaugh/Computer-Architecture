@@ -2,19 +2,25 @@
 
 import sys
 
-LDI = 0b10000010
-PRN = 0b01000111
-HLT = 0b00000001
-MUL = 0b10100010
+LDI  = 0b10000010
+PRN  = 0b01000111
+HLT  = 0b00000001
+MUL  = 0b10100010
+PUSH = 0b01000101
+POP  = 0b01000110
+CALL = 0b01010000
+ADD  = 0b10100000
+RET  = 0b00010001
 
 class CPU:
     """Main CPU class."""
 
     def __init__(self):
         """Construct a new CPU."""
-        self.ram = [0] * 25
+        self.ram = [0] * 256
         self.pc = 0
         self.reg = [0] * 8
+        self.sp = 7
 
     def load(self, file):
         """Load a program into memory."""
@@ -90,17 +96,47 @@ class CPU:
             if command == LDI: #LDI, needs register and numer
                 self.reg[self.ram[self.pc+1]] = self.ram[self.pc+2]
                 self.pc += 3
+
             elif command == PRN: #PRN, needs register to print
                 print(self.reg[self.ram[self.pc+1]])
                 self.pc += 2
+
             elif command == HLT:
                 running = False
                 self.pc += 1
-            elif command == MUL:
 
+            elif command == MUL:
                 self.reg[self.ram[self.pc+2]]
                 self.alu("MUL", self.ram[self.pc+1], self.ram[self.pc+2])
                 self.pc += 3
+            
+            elif command == ADD: 
+                self.reg[self.ram[self.pc+1]] += self.reg[self.ram[self.pc+2]]
+                self.pc += 1
+
+            elif command == PUSH:
+                reg = self.ram[self.pc + 1]
+                val = self.reg[reg]
+                # Decrement the SP.
+                self.reg[self.sp] -= 1
+                # Copy the value in the given self.reg to the address pointed to by self.sp.
+                self.ram[self.reg[self.sp]] = val
+                self.pc += 2
+
+            elif command == POP:
+                reg = self.ram[self.pc + 1]
+                val = self.ram[self.reg[self.sp]]
+                # Copy the value from the address pointed to by self.sp to the given self.reg.
+                self.reg[reg] = val
+                # Increment self.sp.
+                self.reg[self.sp] += 1
+                self.pc += 2
+
+            elif command == CALL:
+                reg = self.ram[self.pc + 1]
+                self.pc = self.reg[reg]
+
+                
             else:
                 print(f"Unknown instruction: {command}")
                 sys.exit(1)
